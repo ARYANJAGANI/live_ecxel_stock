@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stock Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .search-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: #2980b9;
+        }
+
+        .last-updated {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .auto-refresh {
+            text-align: center;
+            color: #27ae60;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .results-container {
+            padding: 0 30px 30px;
+        }
+
+        .stock-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stock-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stock-exchange {
+            background: #ecf0f1;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .stock-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #555;
+            font-size: 0.9em;
+        }
+
+        .detail-value {
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+
+        .price-change {
+            font-weight: bold;
+        }
+
+        .positive {
+            color: #27ae60;
+        }
+
+        .negative {
+            color: #e74c3c;
+        }
+
+        .recommendation {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .recommendation.BUY {
+            background: #d5f4e6;
+            border: 2px solid #27ae60;
+        }
+
+        .recommendation.SELL {
+            background: #fadbd8;
+            border: 2px solid #e74c3c;
+        }
+
+        .recommendation.HOLD {
+            background: #fef9e7;
+            border: 2px solid #f39c12;
+        }
+
+        .recommendation-action {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .recommendation-reason {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .recommendation-confidence {
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            background: #fadbd8;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .stock-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Live Stock Monitor</h1>
+            <p>Real-time stock data with buy/sell recommendations</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-box" placeholder="Search for stocks (e.g., NIFTY, BANKNIFTY, TCS)...">
+                <button onclick="searchStocks()" class="search-btn">🔍 Search</button>
+            </div>
+            
+            <div class="last-updated" id="lastUpdated">
+                Data updates every 5 minutes
+            </div>
+            
+            <div class="auto-refresh" id="autoRefresh">
+                Auto-refresh: ON
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        let lastSearchQuery = '';
+
+        function formatNumber(num) {
+            if (num === null || num === undefined) return 'N/A';
+            return parseFloat(num).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatPercentage(num) {
+            if (num === null || num === undefined) return 'N/A';
+            const formatted = parseFloat(num).toFixed(2);
+            return `${formatted > 0 ? '+' : ''}${formatted}%`;
+        }
+
+        function displayStocks(stocks) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (stocks.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">No stocks found matching your search.</div>';
+                return;
+            }
+
+            let html = '';
+            stocks.forEach(stock => {
+                const changeClass = stock['% Change'] > 0 ? 'positive' : 'negative';
+                const recommendation = stock.recommendation || { action: 'HOLD', reason: 'No recommendation available', confidence: 'Low' };
+                
+                html += `
+                    <div class="stock-card">
+                        <div class="stock-header">
+                            <div class="stock-name">${stock['Scrip Name']}</div>
+                            <div class="stock-exchange">${stock['Exchange'] || 'N/A'}</div>
+                        </div>
+                        
+                        <div class="stock-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Current Price</div>
+                                <div class="detail-value">₹${formatNumber(stock['Current'])}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">% Change</div>
+                                <div class="detail-value price-change ${changeClass}">${formatPercentage(stock['% Change'])}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">Bid Price</div>
+                                <div class="detail-value">₹${formatNumber(stock['Bid Price'])}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">Offer Price</div>
+                                <div class="detail-value">₹${formatNumber(stock['Offer Price'])}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">Quantity</div>
+                                <div class="detail-value">${formatNumber(stock['Qty'])}</div>
+                            </div>
+                            
+                            <div class="detail-item">
+                                <div class="detail-label">Lot Size</div>
+                                <div class="detail-value">${stock['Lot Size'] || 'N/A'}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="recommendation ${recommendation.action}">
+                            <div class="recommendation-action">${recommendation.action}</div>
+                            <div class="recommendation-reason">${recommendation.reason}</div>
+                            <div class="recommendation-confidence">Confidence: ${recommendation.confidence}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+            updateLastUpdated();
+        }
+
+        function searchStocks() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a stock name to search');
+                return;
+            }
+
+            lastSearchQuery = query;
+            document.getElementById('results').innerHTML = '<div class="loading">Searching for stocks...</div>';
+
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('results').innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    } else {
+                        displayStocks(data);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('results').innerHTML = `<div class="error">Error loading data: ${error.message}</div>`;
+                });
+        }
+
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                hour12: true
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timeString}`;
+        }
+
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                if (lastSearchQuery) {
+                    // Silently refresh the current search
+                    fetch(`/api/search?q=${encodeURIComponent(lastSearchQuery)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (!data.error) {
+                                displayStocks(data);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Auto-refresh error:', error);
+                        });
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchStocks();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLastUpdated();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>
