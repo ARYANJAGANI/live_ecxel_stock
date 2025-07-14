@@ -96,6 +96,8 @@ def get_stock_detail(stock_name):
 
 if __name__ == '__main__':
     print("Starting Live Stock Monitor...")
-    print("Open your browser and go to: http://localhost:5000")
+    # Get port from environment variable (required for Render)
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Server will run on port: {port}")
     print("Press Ctrl+C to stop the server")
-    app.run(debug=False, host='127.0.0.1', port=5000)
+    app.run(debug=False, host='0.0.0.0', port=port)
